@@ -1,0 +1,8 @@
+__pycache__/
+bot.token
+*.log
+.DS_Store
+# личное: шаги для BotFather и заметки про свой сервер
+Для бота/
+deploy/ЗАПУСК.md
+deploy/token.sh

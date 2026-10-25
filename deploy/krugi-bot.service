@@ -1,0 +1,52 @@
+# Кружок на сервере: своя клетка и потолок,
+# чтобы ffmpeg не отнял процессор и память у соседних служб.
+# Код: /opt/krugi (root:root 644), данные: /var/lib/krugi-bot (bot.token, thanks.jsonl, stats.json).
+[Unit]
+Description=Krugi Telegram bot (video -> video note)
+After=network-online.target
+Wants=network-online.target
+# без токена не стартуем (кладёт deploy/token.sh)
+ConditionPathExists=/var/lib/krugi-bot/bot.token
+
+[Service]
+User=krugbot
+Group=krugbot
+WorkingDirectory=/opt/krugi
+ExecStart=/usr/bin/python3 -I /opt/krugi/krugi.py
+Environment=KRUGI_DATA=/var/lib/krugi-bot
+Environment=KRUGI_WORK=/var/cache/krugi-bot
+Environment=KRUGI_JOBS=2
+Environment=KRUGI_FFMPEG_THREADS=1
+StateDirectory=krugi-bot
+CacheDirectory=krugi-bot
+Restart=always
+RestartSec=5
+
+# потолок: полтора ядра из трёх, 1 ГБ памяти, ниже Качалки по приоритету
+CPUQuota=150%
+MemoryMax=1G
+TasksMax=64
+Nice=10
+IOSchedulingClass=idle
+
+# клетка: видит только свою папку, в чужие (Качалка, ключи) не заглядывает
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# наружу — только в интернет (Telegram); внутренние сети закрыты
+IPAddressDeny=10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 100.64.0.0/10 fc00::/7 fe80::/10
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
